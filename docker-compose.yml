@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: codeforge-db
+    restart: always
+    environment:
+      POSTGRES_USER: codeforge
+      POSTGRES_PASSWORD: codeforge_password
+      POSTGRES_DB: codeforge_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - codeforge-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U codeforge -d codeforge_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  codeforge-pgdata:
+

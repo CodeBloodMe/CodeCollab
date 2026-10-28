@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "y-socket.io": "^1.1.3",
+    "yjs": "^13.6.33"
+  }
+}

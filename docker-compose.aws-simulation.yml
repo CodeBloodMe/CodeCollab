@@ -1,0 +1,77 @@
+version: "3.8"
+
+services:
+  # Amazon RDS PostgreSQL Simulation (Shared Database)
+  db:
+    image: postgres:16-alpine
+    container_name: codeforge-rds-db
+    environment:
+      POSTGRES_USER: codeforge
+      POSTGRES_PASSWORD: codeforge_secret
+      POSTGRES_DB: codeforge
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_aws:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U codeforge -d codeforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # EC2 Instance 1 (Availability Zone us-east-1a)
+  server1:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: ec2-server1-us-east-1a
+    environment:
+      PORT: 5000
+      DATABASE_URL: postgres://codeforge:codeforge_secret@db:5432/codeforge
+      INSTANCE_ID: ec2-server1-us-east-1a
+      INSTANCE_ROLE: "Primary Compute Node (Server 1)"
+      AZ_ZONE: us-east-1a
+      JWT_SECRET: codeforge_aws_secret_key_12345
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+  # EC2 Instance 2 (Availability Zone us-east-1b)
+  server2:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: ec2-server2-us-east-1b
+    environment:
+      PORT: 5000
+      DATABASE_URL: postgres://codeforge:codeforge_secret@db:5432/codeforge
+      INSTANCE_ID: ec2-server2-us-east-1b
+      INSTANCE_ROLE: "Secondary Compute Node (Server 2)"
+      AZ_ZONE: us-east-1b
+      JWT_SECRET: codeforge_aws_secret_key_12345
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+  # AWS Application Load Balancer Simulation (Nginx Round-Robin + WebSocket Upgrades)
+  alb:
+    image: nginx:alpine
+    container_name: aws-alb-load-balancer
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - server1
+      - server2
+    restart: unless-stopped
+
+volumes:
+  pgdata_aws:
+

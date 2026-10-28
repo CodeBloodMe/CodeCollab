@@ -1,0 +1,38 @@
+{
+  "TargetGroup": {
+    "Name": "codeforge-backend-tg",
+    "Protocol": "HTTP",
+    "Port": 5000,
+    "VpcId": "vpc-xxxxxxx",
+    "TargetType": "instance",
+    "HealthCheckProtocol": "HTTP",
+    "HealthCheckPort": "5000",
+    "HealthCheckPath": "/api/health",
+    "HealthCheckIntervalSeconds": 30,
+    "HealthCheckTimeoutSeconds": 5,
+    "HealthyThresholdCount": 2,
+    "UnhealthyThresholdCount": 3,
+    "Matcher": {
+      "HttpCode": "200"
+    },
+    "TargetGroupAttributes": [
+      {
+        "Key": "stickiness.enabled",
+        "Value": "true"
+      },
+      {
+        "Key": "stickiness.type",
+        "Value": "lb_cookie"
+      },
+      {
+        "Key": "stickiness.lb_cookie.duration_seconds",
+        "Value": "86400"
+      },
+      {
+        "Key": "load_balancing.algorithm.type",
+        "Value": "round_robin"
+      }
+    ]
+  }
+}
+
